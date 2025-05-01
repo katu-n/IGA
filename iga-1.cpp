@@ -2,40 +2,61 @@
 #include <cmath>
 #include <vector>
 #include <iomanip>
+#include <fstream>
 
+struct Point {
+    double x;
+    double y;
+};
 
 // B-spline基底関数の計算
-double bspline(int i, int p, double u, const std::vector<double>& knots){
-    if (p == 0) {
-        //0次基底関数(区間内なら1、外なら0)
-        if(u>=knots[i]&& u < knots[i+1]){
-            return 1.0;
-        } else {
-            return 0.0;
-        }
-    }
+double bspline(int i, int p, double xi, const std::vector<double>& knots){
 
-    //p次基底関数
+    if (p == 0) {
+        return (xi >= knots[i] && xi < knots[i + 1]) ? 1.0 : 0.0;
+    } else {
+        double left = 0.0;
+        double right = 0.0;
     
+        double denom1 = knots[i + p] - knots[i];
+        if (denom1 != 0) {
+            left = (xi - knots[i]) / denom1 * bspline(i, p - 1, xi, knots);
+        }
+        double denom2 = knots[i + p + 1] - knots[i + 1];
+        if (denom2 != 0) {
+            right = (knots[i + p + 1] - xi) / denom2 * bspline(i + 1, p - 1, xi, knots);
+        }
+        return left + right;
+    } 
 }
 
-double computeBSline(int p, const std::vector<double>& knotVector, const std::vector<double>& controlPoints,int numPoints){
+Point computeBSline(double xi, const std::vector<Point>& controlPoints, const std::vector<double>& knot, int degree) {
+    Point result = {0.0, 0.0};
+
+    for(int i = 0; i < controlPoints.size(); ++i) {
+        double b = bspline(i, degree, xi, knot);
+        result.x += b * controlPoints[i].x;
+        result.y += b * controlPoints[i].y;
+    }
+
+    return result;
 
 }
 
 int main () {
     //controlPoint
-    std::vector<double> controlPoints={0.0, 1.0, 0.0};
+    std::vector<Point> controlPoints={{0,0}, {1,2}, {2,0}, {3,1}, {4,0}};
     //ノットベクトルの定義
-    std::vector<double> knotVector = {0.0, 0.0, 1.0 ,1.0 ,2.0 ,2.0};
+    std::vector<double> knot = {0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0, 4.0};
+    int degree = 2; //B-splineの次数
 
-    //B-spline曲線を計算
-    std::vector<double> curve = computeBSline(1, knotVector,controlPoints,100 );
-
-    std::cout << "B-spline 1D:\n";
-    for(int i=0; i< curve.size(); i++){
-        std::cout << std::setw(10) << i /100.0 << " : " << curve[i] << std::endl;
+    std::ofstream ofs("bspline.txt");
+    //ξはxi
+    for(double x1i = knot[degree]; x1i < knot[knot.size()-degree-1]; x1i+=0.01){
+        Point pt = computeBSline(x1i, controlPoints, knot, degree);
+        ofs << pt.x << " " << pt.y << "\n";
     }
 
+    ofs.close();
     return 0;
 }
