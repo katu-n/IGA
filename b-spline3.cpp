@@ -42,7 +42,7 @@ class Bspline
 
         double basisFunction(int i, int degree, double t);
         void calCoordinate();
-        void printCSV(std::ofstream& ofs,double xi,double x, double y);
+        void printCSV(std::ofstream& ofs,double xi,double N);
 };
 
 double Bspline::basisFunction(int i,int degree, double t)
@@ -73,31 +73,33 @@ double Bspline::basisFunction(int i,int degree, double t)
     return term1+term2;
 }
 
-void Bspline::printCSV(std::ofstream& ofs, double xi, double x, double y)
+void Bspline::printCSV(std::ofstream& ofs, double xi, double N)
 {
         ofs << std::fixed << std::setprecision(4) << xi << ","
-            << std::setprecision(6) << x << "," << y << std::endl;
+            << std::setprecision(6) << N << std::endl;
 }
 
 
 void Bspline::calCoordinate()
 {
-    std::ofstream ofs("b_splineCurve.csv");
+    std::ofstream ofs("basisFunction.csv");
 
-    ofs << "t,x,y" << std::endl;
+    for(size_t j=0; j<CP.size(); j++)
+    {
+        ofs << "N" << j;
+    }
+    ofs <<  std::endl;
 
         for(int i=0; i<=step; i++)
         {
             double xi = static_cast<double>(i)/step;
 
-            double x=0.0, y=0.0;
-            for(int j=0; j<=CP.size(); j++)
+            for(int j=0; j<CP.size(); j++)
             {
                 double N = basisFunction(j,p,xi);
-                x += CP[j].x*N;
-                y += CP[j].y*N;
+                ofs << "," << std::fixed << std::setprecision(6) << N;
             }
-            printCSV(ofs,xi,x,y);
+            ofs << std::endl;
         }
 }
 int main()
@@ -110,7 +112,7 @@ int main()
         {2.0, 0.5},
         {5.0, -4.0},
         {5.0, 2.0},
-        {12.0, 0.5}
+        {12.0, 0.0},
     };
 
     Bspline bs(p,cps);
